@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Kbg.NppPluginNET.PluginInfrastructure;
 using static Kbg.NppPluginNET.PluginInfrastructure.Win32;
+using System.IO.Compression;
 
 namespace Kbg.NppPluginNET
 {
@@ -106,7 +107,7 @@ namespace Kbg.Demo.Namespace
             //            ShortcutKey *shortcut,                // optional. Define a shortcut to trigger this command
             //            bool check0nInit                      // optional. Make this menu item be checked visually
             //            );
-            PluginBase.SetCommand(0, "View Message", hello);
+            PluginBase.SetCommand(0, "View Message", ViewMessage);
            
             idFrmGotToLine = 0;
 
@@ -141,15 +142,72 @@ namespace Kbg.Demo.Namespace
         #endregion
 
         #region " Menu functions "
-        static void hello()
+        
+        static void ViewMessage()
         {
+            // Get the current content          
+            string content = GetDocumentTextBytes(PluginBase.GetCurrentScintilla());
+            // uncompress with GZip
+            string decompressed = String.Empty;
+            try
+            {
+                decompressed = DecompressString(content);
+            }
+            catch (Exception ex)
+            {
+                decompressed = "ERROR! Unable to decompress data due to error: " + ex.Message;
+            }
+
             notepad.FileNew();
-            editor.SetText("Hello, Notepad++...from.NET!");
-            var rest = editor.GetLine(0);
-            editor.SetText(rest+rest+rest);
+            editor.SetText(decompressed);
         }
 
-               
+        static string GetDocumentTextBytes(IntPtr curScintilla)
+        {
+
+            int length = (int)Win32.SendMessage(curScintilla, SciMsg.SCI_GETLENGTH, 0, 0) + 1;
+            byte[] sb = new byte[length];
+
+            unsafe
+            {
+                fixed (byte* p = sb)
+                {
+
+                    IntPtr ptr = (IntPtr)p;
+
+                    Win32.SendMessage(curScintilla, SciMsg.SCI_GETTEXT, length, ptr);
+                }
+
+                return System.Text.Encoding.UTF8.GetString(sb).TrimEnd('\0');
+            }
+        }
+
+        /// <summary>
+        /// Decompresses the string.
+        /// </summary>
+        /// <param name="compressedText">The compressed text.</param>
+        /// <returns></returns>
+        static string DecompressString(string compressedText)
+        {
+            byte[] gZipBuffer = Convert.FromBase64String(compressedText);
+            using (var memoryStream = new MemoryStream())
+            {
+                int dataLength = BitConverter.ToInt32(gZipBuffer, 0);
+                memoryStream.Write(gZipBuffer, 4, gZipBuffer.Length - 4);
+
+                var buffer = new byte[dataLength];
+
+                memoryStream.Position = 0;
+                using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
+                {
+                    gZipStream.Read(buffer, 0, buffer.Length);
+                }
+
+                return Encoding.UTF8.GetString(buffer);
+            }
+        }
+
+
         static Regex regex = new Regex(@"[\._\-:\w]", RegexOptions.Compiled);
 
         static internal void doInsertHtmlCloseTag(char newChar)
