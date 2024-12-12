@@ -66,9 +66,6 @@
     <StartProgram Condition="'$(Platform)'=='x86'">$(MSBuildProgramFiles32)\Notepad++\notepad++.exe</StartProgram>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\Visual Studio Project Template C#\PluginInfrastructure\DllExport\DllExportAttribute.cs">
-      <Link>PluginInfrastructure\DllExport\DllExportAttribute.cs</Link>
-    </Compile>
     <Compile Include="Forms\frmGoToLine.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -77,6 +74,7 @@
     </Compile>
     <Compile Include="Demo.cs" />
     <Compile Include="PluginInfrastructure\ClikeStringArray.cs" />
+    <Compile Include="PluginInfrastructure\DllExport\DllExportAttribute.cs" />
     <Compile Include="PluginInfrastructure\Docking_h.cs" />
     <Compile Include="PluginInfrastructure\GatewayDomain.cs" />
     <Compile Include="PluginInfrastructure\IScintillaGateway.cs" />
